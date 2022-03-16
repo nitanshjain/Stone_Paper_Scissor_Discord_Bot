@@ -1,8 +1,11 @@
-from cmath import nan
-import random
+import discord
+import os
 import sqlite3
+import random
+from dotenv import load_dotenv
 
-
+load_dotenv()
+client=discord.Client()
 
 # connecting to sql database
 conn=sqlite3.connect('gamedb.sqlite')
@@ -83,4 +86,7 @@ else:
 
 conn.commit()
 conn.close()
+
+
+
 

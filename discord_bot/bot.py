@@ -5,11 +5,11 @@ import sqlite3
 import random
 import asyncio
 import aiomysql
-# import pandas
+import pandas as pd
 from dotenv import load_dotenv
 from discord.ext import commands, tasks
 from discord.utils import get
-from discord_components import DiscordComponents, Button, ButtonStyle, InteractionType
+from discord_components import DiscordComponents, Button, ButtonStyle
 
 load_dotenv()
 
@@ -51,7 +51,6 @@ async def on_ready():
     conn.commit()
     conn.close()
     print('We have logged in as {0.user}'.format(bot))
-    DiscordComponents(bot, change_discord_methods=True)
 
 @bot.command(name='start', pass_context=True)
 async def startGame(ctx):
@@ -82,6 +81,7 @@ async def startGame(ctx):
         msg = await bot.wait_for("message", timeout=30) # 30 seconds to reply
     except asyncio.TimeoutError:
         await ctx.send('Sorry, bot took your delay as a sign of cowardice')
+        
     await ctx.send('Your option was {}'.format(msg.content))
     player_choice=str(msg.content)
     player_choice=player_choice.lower();
@@ -131,8 +131,8 @@ async def listWinners(ctx):
     cur.execute('SELECT COUNT(winner) FROM Round WHERE winner= ?', (player_name,))
     win_count=cur.fetchall()
     
-    cur.execute('SELECT game_id, winner, player_input, computer_input FROM Round WHERE winner= ?', (player_name,))
-    winner_detail=cur.fetchall()
+    # cur.execute('SELECT game_id, winner, player_input, computer_input FROM Round WHERE winner= ?', (player_name,))
+    # winner_detail=cur.fetchall()
     
     num_wins=win_count[0][0]
     await ctx.send('{} has won {} games'.format(player_name, num_wins))
@@ -141,8 +141,22 @@ async def listWinners(ctx):
     conn.commit()
     conn.close()
 
-
-
+@bot.command(name='pd', pass_context=True)
+async def listWinners(ctx):
+    conn=sqlite3.connect('gamedb.sqlite')
+    cur = conn.cursor()
+    
+    # getting player name
+    player_name=str(ctx.author)
+    player_name=player_name.strip()
+    
+    sql_query = pd.read_sql_query ('''SELECT * FROM Round''', conn)
+    df = pd.DataFrame(sql_query, columns = ['game_id', 'player_id', 'player_input', 'computer_input', 'winner'])
+    print(df)
+    await ctx.send(f"```\n{df}\n```")
+    conn.commit()
+    conn.close()
+    
 D_TOKEN=os.getenv('TOKEN')
 bot.run(D_TOKEN)
 

@@ -5,10 +5,11 @@ import sqlite3
 import random
 import asyncio
 import aiomysql
+# import pandas
 from dotenv import load_dotenv
 from discord.ext import commands, tasks
 from discord.utils import get
-
+from discord_components import DiscordComponents, Button, ButtonStyle, InteractionType
 
 load_dotenv()
 
@@ -50,6 +51,7 @@ async def on_ready():
     conn.commit()
     conn.close()
     print('We have logged in as {0.user}'.format(bot))
+    DiscordComponents(bot, change_discord_methods=True)
 
 @bot.command(name='start', pass_context=True)
 async def startGame(ctx):
@@ -64,7 +66,6 @@ async def startGame(ctx):
     # inputting player name in Player table
     cur.execute('''INSERT OR IGNORE INTO Player (player_name) VALUES (?)''',(player_name,))
     cur.execute('SELECT player_id FROM Player WHERE player_name= ?', (player_name,))
-    await ctx.send('{} added to database'.format(player_name))
     
     # fetching player_id from player_name
     player_id=cur.fetchone()[0]
@@ -117,6 +118,28 @@ async def startGame(ctx):
     conn.commit()
     conn.close()
 
+# gets total count of all wins
+@bot.command(name='mywins', pass_context=True)
+async def listWinners(ctx):
+    conn=sqlite3.connect('gamedb.sqlite')
+    cur = conn.cursor()
+    
+    # getting player name
+    player_name=str(ctx.author)
+    player_name=player_name.strip()
+    
+    cur.execute('SELECT COUNT(winner) FROM Round WHERE winner= ?', (player_name,))
+    win_count=cur.fetchall()
+    
+    cur.execute('SELECT game_id, winner, player_input, computer_input FROM Round WHERE winner= ?', (player_name,))
+    winner_detail=cur.fetchall()
+    
+    num_wins=win_count[0][0]
+    await ctx.send('{} has won {} games'.format(player_name, num_wins))
+    # await ctx.send(winner_detail)
+    
+    conn.commit()
+    conn.close()
 
 
 
